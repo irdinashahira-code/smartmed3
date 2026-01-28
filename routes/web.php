@@ -11,44 +11,41 @@ Route::get('/', function () {
 
 // Temporary Database Setup Route (For Render Deployment)
 Route::get('/deploy-setup', function () {
+    ini_set('memory_limit', '512M');
+    ini_set('max_execution_time', 300);
+    
+    $output = "<h1>Deployment Setup Log</h1><pre>";
+    
     try {
-        // Increase memory limit for migration
-        ini_set('memory_limit', '512M');
-        ini_set('max_execution_time', 300);
-
-        $output = "Starting setup...\n";
-
-        // Attempt to clean database completely
-        try {
-            $output .= "Attempting DB wipe...\n";
-            \Illuminate\Support\Facades\Artisan::call('db:wipe', ['--force' => true]);
-            $output .= "DB Wipe successful.\n";
-        } catch (\Exception $e) {
-            $output .= "DB Wipe failed: " . $e->getMessage() . "\n";
-            
-            // If postgres, try nuclear option (Drop Schema)
-            if (config('database.default') === 'pgsql') {
-                $output .= "Attempting NUCLEAR RESET (Drop Schema)...\n";
-                try {
-                    \Illuminate\Support\Facades\DB::statement('DROP SCHEMA public CASCADE');
-                    \Illuminate\Support\Facades\DB::statement('CREATE SCHEMA public');
-                    $output .= "Schema Public dropped and recreated.\n";
-                } catch (\Exception $ex) {
-                    $output .= "Nuclear reset failed: " . $ex->getMessage() . "\n";
-                }
-            }
-        }
-
-        $output .= "Starting Migration...\n";
+        // 1. Force a fresh connection to avoid "Transaction Aborted" ghost errors
+        \Illuminate\Support\Facades\DB::purge('pgsql');
+        \Illuminate\Support\Facades\DB::reconnect('pgsql');
+        $output .= "Database connection refreshed.\n";
+        
+        // 2. NUCLEAR RESET: Drop the entire schema
+        // This bypasses all "Table exists" or "Foreign key" errors
+        $output .= "Executing Nuclear Reset (DROP SCHEMA public)...\n";
+        \Illuminate\Support\Facades\DB::statement('DROP SCHEMA IF EXISTS public CASCADE');
+        \Illuminate\Support\Facades\DB::statement('CREATE SCHEMA public');
+        $output .= "Schema public recreated successfully.\n";
+        
+        // 3. Run Migrations from Scratch
+        $output .= "Starting Migrations & Seeding...\n";
         \Illuminate\Support\Facades\Artisan::call('migrate', [
             '--force' => true,
             '--seed' => true
         ]);
         
-        return '<h1>Database Setup Successful! ✅</h1><p>Tables created and seeded.</p><pre>' . $output . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
-    } catch (\Exception $e) {
-        return '<h1>Setup Failed ❌</h1><p>' . $e->getMessage() . '</p><pre>' . $e->getTraceAsString() . '</pre>';
+        $output .= \Illuminate\Support\Facades\Artisan::output();
+        $output .= "\n✅ SETUP COMPLETED SUCCESSFULLY! You can now login.";
+        
+    } catch (\Throwable $e) {
+        // Catch Throwable to handle critical errors
+        $output .= "\n❌ CRITICAL ERROR: " . $e->getMessage();
+        $output .= "\nTrace:\n" . $e->getTraceAsString();
     }
+    
+    return $output . "</pre>";
 });
 
 Route::get('/register', function () {
