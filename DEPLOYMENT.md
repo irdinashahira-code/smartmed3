@@ -4,22 +4,16 @@ Panduan ini adalah cara **paling pantas dan percuma** untuk deploy projek Larave
 
 ---
 
-## Langkah 1: Push Kod ke GitHub
+## Langkah 1: Tambah Fail Docker & Push Kod ke GitHub
 
-Render memerlukan kod anda berada di GitHub.
+Oleh kerana Render mungkin tak detect PHP secara automatik, kita dah tambah fail `Dockerfile` untuk paksa dia guna setting yang betul.
 
 1.  Buka terminal di VS Code.
-2.  Jalankan arahan berikut satu persatu:
+2.  Jalankan arahan berikut satu persatu untuk update GitHub awak dengan fail baru:
     ```bash
     git add .
-    git commit -m "Siap untuk deployment"
-    ```
-3.  Pergi ke [GitHub.com](https://github.com) dan cipta **New Repository** (namakan `smartmed3`).
-4.  Ikut arahan GitHub untuk push kod anda (biasanya seperti ini):
-    ```bash
-    git remote add origin https://github.com/USERNAME_ANDA/smartmed3.git
-    git branch -M main
-    git push -u origin main
+    git commit -m "Tambah Dockerfile untuk deployment Render"
+    git push origin main
     ```
 
 ---
@@ -30,24 +24,21 @@ Render ada database percuma tapi ia akan **padam selepas 90 hari**. Neon.tech ad
 
 1.  Pergi ke [Neon.tech](https://neon.tech) dan Sign Up.
 2.  Cipta projek baru.
-3.  Anda akan dapat **Connection String** (contoh: `postgres://user:pass@ep-xyz.aws.neon.tech/neondb...`).
-4.  **Salin** connection string ini. Kita akan gunakannya nanti.
+3.  Pastikan pilih Region **Singapore**.
+4.  Copy **Connection String** (pilih yang `postgres://...` atau `postgresql://...`).
 
 ---
 
 ## Langkah 3: Setup Web Service (Render.com)
 
-1.  Pergi ke [Render.com](https://render.com) dan Sign Up/Login (boleh guna akaun GitHub).
+1.  Pergi ke [Render.com](https://render.com) dan Sign Up/Login.
 2.  Klik butang **New +** dan pilih **Web Service**.
-3.  Sambungkan akaun GitHub anda dan pilih repository `smartmed3` yang anda baru push tadi.
-4.  Isi maklumat berikut:
-    *   **Name**: `smartmed-app` (atau apa-apa nama unik).
-    *   **Region**: Singapore (paling dekat dengan Malaysia) atau mana-mana yang available.
+3.  Pilih repository `smartmed3`.
+4.  **PENTING**:
+    *   Sekarang Render sepatutnya akan detect **Docker** sebagai Environment (sebab kita dah ada Dockerfile).
+    *   Jika dia tanya "Runtime", pilih **Docker**.
+    *   **Region**: Singapore.
     *   **Branch**: `main`.
-    *   **Root Directory**: (biarkan kosong).
-    *   **Runtime**: `PHP`.
-    *   **Build Command**: `composer install --no-dev --optimize-autoloader && npm install && npm run build`
-    *   **Start Command**: `php artisan serve --host=0.0.0.0 --port=$PORT`
 
 5.  **Environment Variables** (Sangat Penting!):
     Klik "Advanced" atau scroll ke bawah ke bahagian "Environment Variables". Tambah variable berikut:
@@ -57,38 +48,26 @@ Render ada database percuma tapi ia akan **padam selepas 90 hari**. Neon.tech ad
     | `APP_NAME` | `SmartMed` |
     | `APP_ENV` | `production` |
     | `APP_KEY` | (Salin dari file .env tempatan anda, mula dengan `base64:...`) |
-    | `APP_DEBUG` | `true` (Set `true` sementara untuk nampak error jika ada) |
+    | `APP_DEBUG` | `true` |
     | `APP_URL` | (Biarkan kosong dulu, nanti update lepas dapat link Render) |
-    | `DB_CONNECTION` | `pgsql` (**PENTING**: Tukar ke `pgsql` sebab Neon guna PostgreSQL) |
+    | `DB_CONNECTION` | `pgsql` |
     | `DATABASE_URL` | (Paste Connection String dari Neon.tech tadi di sini) |
-
-    *Nota: Bila guna `DATABASE_URL`, Laravel akan automatik detect DB_HOST, DB_USER, dll.*
 
 6.  Klik **Create Web Service**.
 
 ---
 
-## Langkah 4: Tunggu Deployment & Migration
+## Langkah 4: Tunggu Deployment
 
-1.  Render akan mula proses deployment. Anda boleh tengok log di tab "Logs".
-2.  Tunggu sehingga nampak mesej "Your service is live" atau status hijau.
-3.  **Run Migration (Untuk create table database):**
-    *   Di dashboard Render projek anda, cari butang **Shell** atau **Connect** (di menu kiri atau atas).
-    *   Ini akan buka terminal server Render.
-    *   Taip arahan ini dan tekan Enter:
-        ```bash
-        php artisan migrate --force
-        ```
-    *   Kalau berjaya, database anda sudah siap!
+1.  Render akan mula proses deployment. Anda boleh tengok log.
+2.  Oleh kerana kita guna Docker, proses setup database (migration) akan jalan secara **automatik** bila server start (saya dah set dalam Dockerfile).
+3.  Tunggu sehingga status jadi hijau ("Live").
 
 ---
 
 ## Langkah 5: Selesai!
 
-1.  Dapatkan link website anda di bahagian atas dashboard Render (contoh: `https://smartmed-app.onrender.com`).
+1.  Dapatkan link website anda di dashboard Render.
 2.  Buka link tersebut. Website anda sepatutnya sudah live!
-3.  **Tips Presentation**:
-    *   Pastikan login admin dan doktor berfungsi.
-    *   Kalau ada error, semak tab **Logs** di Render.
 
 Selamat maju jaya untuk presentation esok! Anda pasti boleh buat! 💪
