@@ -9,6 +9,23 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Temporary Database Setup Route (For Render Deployment)
+Route::get('/deploy-setup', function () {
+    try {
+        // Increase memory limit for migration
+        ini_set('memory_limit', '512M');
+        ini_set('max_execution_time', 300);
+
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', [
+            '--force' => true,
+            '--seed' => true
+        ]);
+        return '<h1>Database Setup Successful! ✅</h1><p>Tables created and seeded.</p><pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    } catch (\Exception $e) {
+        return '<h1>Setup Failed ❌</h1><p>' . $e->getMessage() . '</p><pre>' . $e->getTraceAsString() . '</pre>';
+    }
+});
+
 Route::get('/register', function () {
     return view('auth.register_selection');
 })->name('register');
