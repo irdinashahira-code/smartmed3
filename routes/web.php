@@ -9,43 +9,31 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Temporary Database Setup Route (For Render Deployment)
-Route::get('/deploy-setup', function () {
+// STEP 1: RESET DATABASE (Clear everything)
+Route::get('/step1-reset', function () {
+    try {
+        \Illuminate\Support\Facades\DB::statement('DROP SCHEMA IF EXISTS public CASCADE');
+        \Illuminate\Support\Facades\DB::statement('CREATE SCHEMA public');
+        return '<h1>Langkah 1 Berjaya! ✅</h1><p>Database dah bersih. Sila pergi ke <a href="/step2-migrate">Langkah 2 (Migrate)</a> sekarang.</p>';
+    } catch (\Exception $e) {
+        return '<h1>Error Reset</h1><p>' . $e->getMessage() . '</p>';
+    }
+});
+
+// STEP 2: MIGRATE & SEED (Install tables)
+Route::get('/step2-migrate', function () {
     ini_set('memory_limit', '512M');
     ini_set('max_execution_time', 300);
     
-    $output = "<h1>Deployment Setup Log</h1><pre>";
-    
     try {
-        // 1. Force a fresh connection to avoid "Transaction Aborted" ghost errors
-        \Illuminate\Support\Facades\DB::purge('pgsql');
-        \Illuminate\Support\Facades\DB::reconnect('pgsql');
-        $output .= "Database connection refreshed.\n";
-        
-        // 2. NUCLEAR RESET: Drop the entire schema
-        // This bypasses all "Table exists" or "Foreign key" errors
-        $output .= "Executing Nuclear Reset (DROP SCHEMA public)...\n";
-        \Illuminate\Support\Facades\DB::statement('DROP SCHEMA IF EXISTS public CASCADE');
-        \Illuminate\Support\Facades\DB::statement('CREATE SCHEMA public');
-        $output .= "Schema public recreated successfully.\n";
-        
-        // 3. Run Migrations from Scratch
-        $output .= "Starting Migrations & Seeding...\n";
         \Illuminate\Support\Facades\Artisan::call('migrate', [
             '--force' => true,
             '--seed' => true
         ]);
-        
-        $output .= \Illuminate\Support\Facades\Artisan::output();
-        $output .= "\n✅ SETUP COMPLETED SUCCESSFULLY! You can now login.";
-        
-    } catch (\Throwable $e) {
-        // Catch Throwable to handle critical errors
-        $output .= "\n❌ CRITICAL ERROR: " . $e->getMessage();
-        $output .= "\nTrace:\n" . $e->getTraceAsString();
+        return '<h1>SIAP SEPENUHNYA! 🎉</h1><p>Website dah boleh guna. Sila <a href="/login">Login</a> sekarang.</p><pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    } catch (\Exception $e) {
+        return '<h1>Error Migrate</h1><p>' . $e->getMessage() . '</p><pre>' . $e->getTraceAsString() . '</pre>';
     }
-    
-    return $output . "</pre>";
 });
 
 Route::get('/register', function () {
