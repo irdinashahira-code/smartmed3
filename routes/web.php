@@ -16,11 +16,36 @@ Route::get('/deploy-setup', function () {
         ini_set('memory_limit', '512M');
         ini_set('max_execution_time', 300);
 
-        \Illuminate\Support\Facades\Artisan::call('migrate:fresh', [
+        $output = "Starting setup...\n";
+
+        // Attempt to clean database completely
+        try {
+            $output .= "Attempting DB wipe...\n";
+            \Illuminate\Support\Facades\Artisan::call('db:wipe', ['--force' => true]);
+            $output .= "DB Wipe successful.\n";
+        } catch (\Exception $e) {
+            $output .= "DB Wipe failed: " . $e->getMessage() . "\n";
+            
+            // If postgres, try nuclear option (Drop Schema)
+            if (config('database.default') === 'pgsql') {
+                $output .= "Attempting NUCLEAR RESET (Drop Schema)...\n";
+                try {
+                    \Illuminate\Support\Facades\DB::statement('DROP SCHEMA public CASCADE');
+                    \Illuminate\Support\Facades\DB::statement('CREATE SCHEMA public');
+                    $output .= "Schema Public dropped and recreated.\n";
+                } catch (\Exception $ex) {
+                    $output .= "Nuclear reset failed: " . $ex->getMessage() . "\n";
+                }
+            }
+        }
+
+        $output .= "Starting Migration...\n";
+        \Illuminate\Support\Facades\Artisan::call('migrate', [
             '--force' => true,
             '--seed' => true
         ]);
-        return '<h1>Database Setup Successful! ✅</h1><p>Tables created and seeded.</p><pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+        
+        return '<h1>Database Setup Successful! ✅</h1><p>Tables created and seeded.</p><pre>' . $output . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
     } catch (\Exception $e) {
         return '<h1>Setup Failed ❌</h1><p>' . $e->getMessage() . '</p><pre>' . $e->getTraceAsString() . '</pre>';
     }
