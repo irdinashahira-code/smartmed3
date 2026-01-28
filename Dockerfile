@@ -42,4 +42,4 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
 EXPOSE 80
 
 # Run migrations and start Apache
-CMD php artisan migrate:fresh --force --seed && apache2-foreground
+CMD php artisan migrate --force --seed && apache2-foreground
