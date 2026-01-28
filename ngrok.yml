@@ -1,0 +1,7 @@
+version: "2"
+authtoken: 38VhjQeyF4zpNZHA5Rrmqg13aoN_7FZqWKm67FDqbniFgWo1x
+tunnels:
+  smartmed:
+    proto: http
+    addr: 80
+    host_header: smartmed3.test

@@ -1,0 +1,1 @@
+<?php echo "Server is working correctly. The issue is likely browser cache."; ?>
