@@ -12,14 +12,16 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\User::create([
-            'name' => 'Super Admin',
-            'email' => 'admin@smartmed.com',
-            'password' => \Illuminate\Support\Facades\Hash::make('password123'),
-            'role' => 'admin',
-            'status' => 'active',
-            'phone_number' => '0000000000',
-            'ic_number' => '000000000000',
-        ]);
+        \App\Models\User::firstOrCreate(
+            ['email' => 'admin@smartmed.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                'role' => 'admin',
+                'status' => 'active',
+                'phone_number' => '0000000000',
+                'ic_number' => '000000000000',
+            ]
+        );
     }
 }
